@@ -1,9 +1,12 @@
+from dataclasses import dataclass
 from icecream import ic
 import jax
 import jax.numpy as jnp
 from flax import nnx
 from einops import einsum
 import polars as pl
+
+from harmonic_gains.model import MarketEstimator
 
 df = pl.read_csv("dataset.csv")
 dataset = df.select(
@@ -21,35 +24,21 @@ print(test_dataset)
 
 rngs = nnx.Rngs(0)
 
-INITIAL_PARAMS = 64
 
-freqs = jax.random.uniform(rngs(), (INITIAL_PARAMS,), minval=0.1, maxval=10.0)
-complex_coefs = jax.random.normal(rngs(), (INITIAL_PARAMS,), dtype=jnp.complex64)
-
-
-def estimate_prices(timestamps, freqs, coefs):
-    time_normalized = (timestamps - timestamps[0]) / (timestamps[-1] - timestamps[0])
-
-    signal = einsum(
-        coefs,
-        jnp.exp(2j * jnp.pi * freqs[:, None] * time_normalized[None, :]),
-        "i, i j -> j",
-    )
-
-    reconstructed_prices = signal.real
-    return reconstructed_prices
+model = MarketEstimator(
+    degree=1,
+    initial_num_freqs=1024,
+    rngs=rngs,
+)
 
 
 def mape(y_true, y_pred):
     return jnp.mean(jnp.abs((y_true - y_pred) / y_true)) * 100
 
 
-test_prices = test_dataset["price"].to_numpy()
-test_timestamps = test_dataset["timestamp"].dt.timestamp().to_numpy()
-
-reconstructed_prices = estimate_prices(test_timestamps, freqs, complex_coefs)
+test_prices = test_dataset["price"].to_numpy()[:1000]
+test_timestamps = jnp.array(test_dataset["timestamp"].dt.timestamp().to_numpy())[:1000]
+reconstructed_prices = model(test_timestamps)
+print(reconstructed_prices)
 mape_score = mape(test_prices, reconstructed_prices)
-
-ic(f"MAPE on test dataset: {mape_score:.2f}%")
-ic(f"Original prices shape: {test_prices.shape}")
-ic(f"Reconstructed prices shape: {reconstructed_prices.shape}")
+ic(mape_score)
