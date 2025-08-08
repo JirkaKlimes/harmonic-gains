@@ -21,9 +21,8 @@ class MarketEstimator(nnx.Module):
         self.time_max = dt.datetime(2050, 1, 1).timestamp()
 
         self.freqs = nnx.Param(
-            jax.random.uniform(
-                self.rngs(), (self.initial_num_freqs,), minval=0.0, maxval=100.0
-            )
+            jax.random.normal(self.rngs(), (self.initial_num_freqs,))
+            / jnp.sqrt(self.initial_num_freqs)
         )
 
         self.coefs = nnx.Param(
@@ -35,6 +34,7 @@ class MarketEstimator(nnx.Module):
                 ),
                 dtype=jnp.complex64,
             )
+            / self.initial_num_freqs
         )
 
     @nnx.vmap(in_axes=(None, 0))

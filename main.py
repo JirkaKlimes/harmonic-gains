@@ -23,8 +23,8 @@ test_prices = test_dataset["price"].to_numpy()
 test_timestamps = jnp.array(test_dataset["timestamp"].dt.timestamp().to_numpy())
 
 rngs = nnx.Rngs(0)
-model = MarketEstimator(degree=1, initial_num_freqs=4096, rngs=rngs)
-optimizer = nnx.Optimizer(model, optax.sgd(0.001), wrt=nnx.Param)
+model = MarketEstimator(degree=1, initial_num_freqs=1024, rngs=rngs)
+optimizer = nnx.Optimizer(model, optax.adam(0.00001), wrt=nnx.Param)
 
 
 def mse(y_true, y_pred):
