@@ -22,7 +22,7 @@ class MarketEstimator(nnx.Module):
 
         self.freqs = nnx.Param(
             jax.random.uniform(
-                self.rngs(), (self.initial_num_freqs,), minval=0.1, maxval=10.0
+                self.rngs(), (self.initial_num_freqs,), minval=0.0, maxval=100.0
             )
         )
 
